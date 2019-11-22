@@ -1,17 +1,17 @@
 #ifndef _IEE80211_STRUCTS_H_
 #define _IEE80211_STRUCTS_H_
 
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 
 // IEEE802.11 data structures ---------------------
 
-typedef enum
-{
-    WIFI_PKT_MGMT,
-    WIFI_PKT_CTRL,
-    WIFI_PKT_DATA,
-    WIFI_PKT_MISC,
-} wifi_promiscuous_pkt_type_t;
+// typedef enum
+// {
+//     WIFI_PKT_MGMT,
+//     WIFI_PKT_CTRL,
+//     WIFI_PKT_DATA,
+//     WIFI_PKT_MISC,
+// } wifi_promiscuous_pkt_type_t;
 
 typedef enum
 {
@@ -39,7 +39,7 @@ typedef struct
   unsigned tag_number:8;
   unsigned tag_length:8;
   char ssid[0];
-  uint8 rates[1];
+  uint8_t rates[1];
 } wifi_mgmt_beacon_t;
 
 typedef struct

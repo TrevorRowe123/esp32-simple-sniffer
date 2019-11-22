@@ -3,16 +3,12 @@
 // Angel Suarez-B Martin
 
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
+#include "esp_wifi.h"
 #include "sdk_structs.h"
 #include "ieee80211_structs.h"
 #include "string_utils.h"
 
-
-extern "C"
-{
-  #include "user_interface.h"
-}
 
 // According to the SDK documentation, the packet type can be inferred from the
 // size of the buffer. We are ignoring this information and parsing the type-subtype
@@ -37,8 +33,10 @@ wifi_promiscuous_pkt_type_t packet_type_parser(uint16_t len)
 
 // In this example, the packet handler function does all the parsing and output work.
 // This is NOT ideal.
-void wifi_sniffer_packet_handler(uint8_t *buff, uint16_t len)
+void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)
 {
+  uint8_t* primary_channel;
+
   // First layer: type cast the received buffer into our generic SDK structure
   const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buff;
   // Second layer: define pointer to where the actual 802.11 packet is within the structure
@@ -64,7 +62,7 @@ void wifi_sniffer_packet_handler(uint8_t *buff, uint16_t len)
     addr1,
     addr2,
     addr3,
-    wifi_get_channel(),
+    0, // esp_wifi_get_channel(), <- This line should get the channel, but I'm having problems getting the function to work 
     ppkt->rx_ctrl.rssi,
     frame_ctrl->protocol,
     frame_ctrl->type,
@@ -96,6 +94,7 @@ void wifi_sniffer_packet_handler(uint8_t *buff, uint16_t len)
 
     Serial.printf("%s", ssid);
   }
+  Serial.println();
 }
 
 
@@ -103,17 +102,20 @@ void setup()
 {
   // Serial setup
   Serial.begin(115200);
-  delay(10);
-  wifi_set_channel(9);
+  
 
   // Wifi setup
-  wifi_set_opmode(STATION_MODE);
-  wifi_promiscuous_enable(0);
-  WiFi.disconnect();
+  esp_wifi_start();
+  delay(10);
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&cfg);
+  //esp_wifi_set_storage(WIFI_STORAGE_RAM);
+  esp_wifi_set_mode(WIFI_MODE_NULL);
+  esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
 
   // Set sniffer callback
-  wifi_set_promiscuous_rx_cb(wifi_sniffer_packet_handler);
-  wifi_promiscuous_enable(1);
+  esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
+  esp_wifi_set_promiscuous(true);
 
   // Print header
   Serial.printf("\n\n     MAC Address 1|      MAC Address 2|      MAC Address 3| Ch| RSSI| Pr| T(S)  |           Frame type         |TDS|FDS| MF|RTR|PWR| MD|ENC|STR|   SSID");
